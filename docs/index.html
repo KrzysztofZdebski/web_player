@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>HLS Stream Player — AMIPaC</title>
-  <meta name="description" content="Browser-based HLS live streaming player with hls.js, adaptive bitrate switching, real-time diagnostics and request logging.">
+  <title>HLS Monitor // Stream Diagnostics</title>
+  <meta name="description" content="Professional browser-based HLS live streaming diagnostics and stream analyzer tool. Built with hls.js.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/style.css">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 </head>
@@ -15,24 +16,25 @@
   <!-- Access control overlay -->
   <div id="geo-overlay" class="geo-overlay" hidden aria-live="assertive">
     <div class="geo-overlay-card">
-      <div class="geo-overlay-icon">🔒</div>
+      <div class="geo-overlay-icon">
+        <i class="ph ph-shield-warning"></i>
+      </div>
       <h2>Content Restricted</h2>
-      <p id="geo-message">This content is not available in your region.</p>
-      <p class="geo-disclaimer">
-        <strong>⚠️ BROWSER-ONLY DEMO — NOT SECURE CONTENT PROTECTION.</strong><br>
-        This restriction is enforced in the browser only and can be bypassed
-        by any user with developer tools. It is included solely to demonstrate
-        how a geo-access UI might look. No server-side enforcement is applied.
-      </p>
-      <button id="geo-override" type="button">Override (Demo)</button>
+      <p id="geo-message">This stream is not authorized for broadcast in your region.</p>
+      <div class="geo-disclaimer">
+        <strong>⚠️ DEV ENVIRONMENT DEMO — NOT SECURE CONTENT PROTECTION.</strong><br>
+        This geographical restriction is enforced client-side for demonstration purposes only.
+        It is bypassable via browser developer tools. No server-side blocking is active.
+      </div>
+      <button id="geo-override" type="button">Bypass Restriction</button>
     </div>
   </div>
 
   <header class="app-header">
     <div class="header-inner">
       <div class="logo">
-        <span class="logo-icon">▶</span>
-        <span class="logo-text">HLS<span class="logo-accent">Stream</span></span>
+        <i class="ph ph-activity logo-icon"></i>
+        <span class="logo-text">HLS<span class="logo-accent">//MONITOR</span></span>
       </div>
       <div class="header-meta">
         <span id="hls-version" class="badge">hls.js</span>
@@ -42,76 +44,97 @@
   </header>
 
   <main class="app" role="main">
-    <!-- ═══ LEFT COLUMN ═══ -->
+    <!-- ═══ LEFT COLUMN (Broadcast Deck) ═══ -->
     <section class="workspace" aria-label="HLS video player">
-
-      <!-- Video -->
+      <!-- Video Screen -->
       <div class="video-shell" id="video-shell">
+        <div class="video-terminal-header">
+          <span class="terminal-feed-label">
+            <span class="pulse-dot"></span>
+            FEED_01 // LIVE_DECK
+          </span>
+          <span class="terminal-status-label" id="terminal-feed-status">MSE READY</span>
+        </div>
         <video id="video" controls playsinline aria-label="HLS video stream"></video>
         <div class="video-overlay" id="video-overlay" hidden>
-          <div class="spinner" aria-label="Buffering"></div>
+          <div class="spinner-wrap">
+            <div class="spinner" aria-label="Buffering"></div>
+            <span class="spinner-text">BUFFERING FEED...</span>
+          </div>
         </div>
       </div>
 
-      <!-- Source bar -->
+      <!-- Source Console -->
       <form id="source-form" class="source-bar" aria-label="Stream source selector">
+        <div class="console-section-title">
+          <i class="ph ph-terminal-window"></i> Console Controller
+        </div>
         <div class="source-bar-row">
           <label for="source-select">Preset</label>
-          <select id="source-select" name="source" aria-label="Predefined HLS streams">
-            <optgroup label="Local Video 1: Medium Video">
-              <option value="streams/medium/master.m3u8">Medium Video ABR Master</option>
-              <option value="streams/medium/180p/playlist.m3u8">Medium Video 180p</option>
-              <option value="streams/medium/360p/playlist.m3u8">Medium Video 360p</option>
-              <option value="streams/medium/720p/playlist.m3u8">Medium Video 720p</option>
-            </optgroup>
-            <optgroup label="Local Video 2: Abu Dhabi GP">
-              <option value="streams/race/master.m3u8">Abu Dhabi GP ABR Master</option>
-              <option value="streams/race/180p/playlist.m3u8">Abu Dhabi GP 180p</option>
-              <option value="streams/race/360p/playlist.m3u8">Abu Dhabi GP 360p</option>
-              <option value="streams/race/720p/playlist.m3u8">Abu Dhabi GP 720p</option>
-            </optgroup>
-            <optgroup label="Local Video 3: Unstoppable Beauty">
-              <option value="streams/unstoppable/master.m3u8">Unstoppable Beauty ABR Master</option>
-              <option value="streams/unstoppable/180p/playlist.m3u8">Unstoppable Beauty 180p</option>
-              <option value="streams/unstoppable/360p/playlist.m3u8">Unstoppable Beauty 360p</option>
-              <option value="streams/unstoppable/720p/playlist.m3u8">Unstoppable Beauty 720p</option>
-            </optgroup>
-            <optgroup label="Public demo streams" id="public-optgroup">
-              <option value="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8">Mux — Big Buck Bunny (ABR)</option>
-              <option value="https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8">Apple — Bipbop Advanced (fMP4)</option>
-            </optgroup>
-            <optgroup label="Saved custom" id="saved-optgroup" hidden>
-            </optgroup>
-          </select>
+          <div class="select-wrapper">
+            <select id="source-select" name="source" aria-label="Predefined HLS streams">
+              <optgroup label="Local Video 1: Medium Video">
+                <option value="streams/medium/master.m3u8">Medium Video ABR Master</option>
+                <option value="streams/medium/180p/playlist.m3u8">Medium Video 180p</option>
+                <option value="streams/medium/360p/playlist.m3u8">Medium Video 360p</option>
+                <option value="streams/medium/720p/playlist.m3u8">Medium Video 720p</option>
+              </optgroup>
+              <optgroup label="Local Video 2: Abu Dhabi GP">
+                <option value="streams/race/master.m3u8">Abu Dhabi GP ABR Master</option>
+                <option value="streams/race/180p/playlist.m3u8">Abu Dhabi GP 180p</option>
+                <option value="streams/race/360p/playlist.m3u8">Abu Dhabi GP 360p</option>
+                <option value="streams/race/720p/playlist.m3u8">Abu Dhabi GP 720p</option>
+              </optgroup>
+              <optgroup label="Local Video 3: Unstoppable Beauty">
+                <option value="streams/unstoppable/master.m3u8">Unstoppable Beauty ABR Master</option>
+                <option value="streams/unstoppable/180p/playlist.m3u8">Unstoppable Beauty 180p</option>
+                <option value="streams/unstoppable/360p/playlist.m3u8">Unstoppable Beauty 360p</option>
+                <option value="streams/unstoppable/720p/playlist.m3u8">Unstoppable Beauty 720p</option>
+              </optgroup>
+              <optgroup label="Public demo streams" id="public-optgroup">
+                <option value="https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8">Mux — Big Buck Bunny (ABR)</option>
+                <option value="https://devstreaming-cdn.apple.com/videos/streaming/examples/img_bipbop_adv_example_fmp4/master.m3u8">Apple — Bipbop Advanced (fMP4)</option>
+              </optgroup>
+              <optgroup label="Saved custom" id="saved-optgroup" hidden>
+              </optgroup>
+            </select>
+          </div>
         </div>
 
         <div class="source-bar-row source-bar-custom">
-          <label for="custom-url">Custom URL</label>
-          <input id="custom-url" name="customUrl" type="url"
-                 placeholder="https://example.com/stream/master.m3u8"
-                 aria-label="Custom HLS playlist URL">
-          <button type="button" id="save-custom-btn" class="btn-icon" title="Save to list" aria-label="Save custom URL">💾</button>
-          <button type="submit" id="load-btn" class="btn-primary">Load</button>
+          <label for="custom-url">Custom</label>
+          <div class="input-group">
+            <input id="custom-url" name="customUrl" type="url"
+                   placeholder="https://example.com/stream/master.m3u8"
+                   aria-label="Custom HLS playlist URL">
+            <button type="button" id="save-custom-btn" class="btn-icon" title="Save to local presets" aria-label="Save custom URL">
+              <i class="ph ph-floppy-disk"></i>
+            </button>
+            <button type="submit" id="load-btn" class="btn-primary">
+              <i class="ph ph-broadcast"></i> Load Feed
+            </button>
+          </div>
         </div>
       </form>
 
-      <!-- Saved custom playlists (persistent) -->
+      <!-- Saved Playlists -->
       <div id="saved-panel" class="saved-panel" hidden aria-label="Saved custom playlists">
         <div class="saved-panel-header">
-          <h3>Saved Playlists</h3>
-          <button type="button" id="clear-saved-btn" class="btn-text btn-danger-text">Clear all</button>
+          <h3><i class="ph ph-bookmarks"></i> Saved Presets</h3>
+          <button type="button" id="clear-saved-btn" class="btn-text btn-danger-text">
+            <i class="ph ph-trash"></i> Clear All
+          </button>
         </div>
         <ul id="saved-list" class="saved-list"></ul>
       </div>
     </section>
 
-    <!-- ═══ RIGHT COLUMN ═══ -->
+    <!-- ═══ RIGHT COLUMN (Diagnostics Desk) ═══ -->
     <aside class="side-panel" aria-label="Stream diagnostics">
-
       <!-- Status -->
       <section class="panel" aria-label="Player status">
         <h2 class="panel-title">
-          <span class="panel-icon">◉</span> Status
+          <i class="ph ph-activity panel-icon"></i> Status
         </h2>
         <div class="status-row">
           <span id="status-dot" class="status-dot idle"></span>
@@ -126,17 +149,17 @@
       <!-- Quality / ABR -->
       <section class="panel" aria-label="Quality selection">
         <h2 class="panel-title">
-          <span class="panel-icon">◈</span> Quality
+          <i class="ph ph-sliders-horizontal panel-icon"></i> ABR Quality
         </h2>
         <div id="quality-controls" class="quality-controls" role="group" aria-label="Bitrate quality options">
           <button type="button" id="auto-btn" class="quality-btn active" data-level="-1">Auto</button>
         </div>
       </section>
 
-      <!-- Stream metrics -->
+      <!-- Diagnostics -->
       <section class="panel" aria-label="Stream metrics">
         <h2 class="panel-title">
-          <span class="panel-icon">◇</span> Stream Info
+          <i class="ph ph-info panel-icon"></i> Stream Info
         </h2>
         <dl class="metrics">
           <div class="metric-row">
@@ -148,24 +171,24 @@
             <dd id="metric-resolution" class="metric-value">—</dd>
           </div>
           <div class="metric-row">
-            <dt>Video codec</dt>
+            <dt>Video Codec</dt>
             <dd id="metric-video-codec" class="metric-value mono">—</dd>
           </div>
           <div class="metric-row">
-            <dt>Audio codec</dt>
+            <dt>Audio Codec</dt>
             <dd id="metric-audio-codec" class="metric-value mono">—</dd>
           </div>
           <div class="metric-row">
-            <dt>Frame rate</dt>
+            <dt>Frame Rate</dt>
             <dd id="metric-fps" class="metric-value">—</dd>
           </div>
         </dl>
       </section>
 
-      <!-- Buffer / playback statistics -->
+      <!-- Buffer Stats -->
       <section class="panel" aria-label="Buffer and playback statistics">
         <h2 class="panel-title">
-          <span class="panel-icon">◻</span> Buffer Stats
+          <i class="ph ph-waveform panel-icon"></i> Buffer Health
         </h2>
         <dl class="metrics">
           <div class="metric-row">
@@ -173,15 +196,15 @@
             <dd id="stat-buffered" class="metric-value">—</dd>
           </div>
           <div class="metric-row">
-            <dt>Dropped frames</dt>
+            <dt>Dropped</dt>
             <dd id="stat-dropped" class="metric-value">—</dd>
           </div>
           <div class="metric-row">
-            <dt>Playback rate</dt>
+            <dt>Speed</dt>
             <dd id="stat-rate" class="metric-value">—</dd>
           </div>
           <div class="metric-row">
-            <dt>Segments loaded</dt>
+            <dt>Segments</dt>
             <dd id="stat-segments" class="metric-value">0</dd>
           </div>
         </dl>
@@ -197,14 +220,16 @@
       <section class="panel request-panel" aria-label="HLS request log">
         <div class="request-header">
           <h2 class="panel-title">
-            <span class="panel-icon">≡</span> Request Log
+            <i class="ph ph-terminal panel-icon"></i> Request Log
           </h2>
           <div class="request-filters" role="group" aria-label="Log filter">
             <button type="button" class="filter-btn active" data-filter="all" id="filter-all">All</button>
             <button type="button" class="filter-btn" data-filter="m3u8" id="filter-m3u8">m3u8</button>
             <button type="button" class="filter-btn" data-filter="ts" id="filter-ts">.ts</button>
           </div>
-          <button type="button" id="clear-log-btn" class="btn-text" title="Clear log">✕</button>
+          <button type="button" id="clear-log-btn" class="btn-clear-log" title="Clear log">
+            <i class="ph ph-x"></i>
+          </button>
         </div>
         <ol id="request-log" class="request-log" aria-live="polite" aria-atomic="false"></ol>
       </section>
@@ -213,10 +238,9 @@
 
   <footer class="app-footer">
     <p>
-      HLS Player · Built with
-      <a href="https://github.com/video-dev/hls.js/" target="_blank" rel="noopener">hls.js</a>
-      · <a href="https://www.rfc-editor.org/rfc/rfc8216" target="_blank" rel="noopener">RFC 8216</a>
-      · <span class="footer-note">Geo restriction is browser-only demo — no server enforcement</span>
+      HLS MONITOR // BUILT WITH <a href="https://github.com/video-dev/hls.js/" target="_blank" rel="noopener">HLS.JS</a>
+      // <a href="https://www.rfc-editor.org/rfc/rfc8216" target="_blank" rel="noopener">RFC 8216</a>
+      // <span class="footer-note">GEO ACCESS BYPASS SIMULATION</span>
     </p>
   </footer>
 

@@ -32,6 +32,7 @@ const clearLogBtn     = document.getElementById('clear-log-btn');
 const qualityControls = document.getElementById('quality-controls');
 const hlsVersionBadge = document.getElementById('hls-version');
 const engineBadge     = document.getElementById('engine-badge');
+const terminalFeedStatus = document.getElementById('terminal-feed-status');
 const geoOverlay      = document.getElementById('geo-overlay');
 const geoMessage      = document.getElementById('geo-message');
 const geoOverrideBtn  = document.getElementById('geo-override');
@@ -126,6 +127,7 @@ function updateMetrics(levelIndex) {
   if (!hls || !hls.levels || levelIndex < 0) {
     if (video.videoWidth && video.videoHeight) {
       metrics.resolution.textContent = `${video.videoWidth} × ${video.videoHeight}`;
+      if (terminalFeedStatus) terminalFeedStatus.textContent = `${video.videoWidth}×${video.videoHeight} // LIVE`;
     }
     return;
   }
@@ -136,6 +138,9 @@ function updateMetrics(levelIndex) {
   metrics.resolution.textContent = level.width && level.height
     ? `${level.width} × ${level.height}`
     : '—';
+  if (terminalFeedStatus && level.width && level.height) {
+    terminalFeedStatus.textContent = `${level.width}×${level.height} // ABR`;
+  }
   metrics.videoCodec.textContent = level.videoCodec || level.codecSet || '—';
   metrics.audioCodec.textContent = level.audioCodec || '—';
 
@@ -332,10 +337,12 @@ function loadSource(url) {
   videoOverlay.hidden = true;
 
   setStatus('Initialising…', 'loading');
+  if (terminalFeedStatus) terminalFeedStatus.textContent = 'CONNECTING';
 
   /* ── hls.js path ── */
   if (window.Hls && Hls.isSupported()) {
     engineBadge.textContent = `hls.js ${Hls.version || ''}`;
+    if (terminalFeedStatus) terminalFeedStatus.textContent = 'MSE READY';
     hls = new Hls({
       capLevelToPlayerSize: false,
       enableWorker:        true,
@@ -353,6 +360,7 @@ function loadSource(url) {
   /* ── Native HLS path (Safari) ── */
   if (video.canPlayType('application/vnd.apple.mpegurl')) {
     engineBadge.textContent = 'Native HLS';
+    if (terminalFeedStatus) terminalFeedStatus.textContent = 'NATIVE HLS';
     video.src = url;
     logRequest(url);
     setStatus('Native HLS playback', 'playing');
@@ -364,6 +372,7 @@ function loadSource(url) {
 
   /* ── No HLS support ── */
   engineBadge.textContent = 'Unsupported';
+  if (terminalFeedStatus) terminalFeedStatus.textContent = 'UNSUPPORTED';
   setStatus('This browser does not support HLS playback.', 'error');
   renderQualityControls();
 }
@@ -390,25 +399,34 @@ video.addEventListener('loadedmetadata', () => {
 video.addEventListener('waiting', () => {
   videoOverlay.hidden = false;
   setStatus('Buffering…', 'loading');
+  if (terminalFeedStatus) terminalFeedStatus.textContent = 'BUFFERING';
 });
 
 video.addEventListener('playing', () => {
   videoOverlay.hidden = true;
   setStatus('Playing', 'playing');
+  if (terminalFeedStatus && video.videoWidth && video.videoHeight) {
+    terminalFeedStatus.textContent = `${video.videoWidth}×${video.videoHeight} // LIVE`;
+  }
 });
 
 video.addEventListener('pause', () => {
-  if (!video.ended) setStatus('Paused', 'idle');
+  if (!video.ended) {
+    setStatus('Paused', 'idle');
+    if (terminalFeedStatus) terminalFeedStatus.textContent = 'PAUSED';
+  }
 });
 
 video.addEventListener('ended', () => {
   setStatus('Playback ended', 'idle');
   videoOverlay.hidden = true;
+  if (terminalFeedStatus) terminalFeedStatus.textContent = 'ENDED';
 });
 
 video.addEventListener('error', () => {
   setStatus('Video element error', 'error');
   videoOverlay.hidden = true;
+  if (terminalFeedStatus) terminalFeedStatus.textContent = 'ERROR';
 });
 
 /* ═══ hls.js version badge ══════════════════════════════════════ */
